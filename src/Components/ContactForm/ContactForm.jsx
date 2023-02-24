@@ -1,36 +1,45 @@
 import { useState } from 'react';
-import { PropTypes } from "prop-types";
-
+import { useDispatch, useSelector } from 'react-redux';
+import { addContact } from '../../redux/contactsSlice';
+import { nanoid } from 'nanoid';
+import { getContacts } from 'redux/contactsSlice';
 import { Form, Title, Input, Button } from "./ContactForm.styled";
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
-export const ContactForm = ({ onSubmit }) => {
+export const ContactForm = () => {
 	const [name, setName] = useState('');
 	const [number, setNumber] = useState('');
-	const data = { name, number };
-
-	const handleChange = e => {
-		switch (e.target.name) {
-			case 'name':
-				setName(e.target.value);
-				break;
-
-			case 'number':
-				setNumber(e.target.value);
-				break;
-
-			default:
-				return 0;
-		}
-	};
+	const dispatch = useDispatch();
+	const contacts = useSelector(getContacts);
 
 	const handleSubmit = e => {
 		e.preventDefault();
-		onSubmit(data);
+
+		if (contacts.some(contact => contact.name === name)) {
+			Notify.failure(`${name} is already in contacts !`);
+		} else {
+			dispatch(addContact({ id: nanoid(), name, number }));
+		}
+
+		reset();
+	};
+
+	const reset = () => {
 		setName('');
 		setNumber('');
 	};
 
 
+	const handleChangeName = e => {
+		if (e.target.type === 'text') {
+			setName(e.target.value);
+		}
+	};
+	const handleChangeNumber = e => {
+		if (e.target.type === 'tel') {
+			setNumber(e.target.value);
+		}
+	};
 
 	return (
 		<Form onSubmit={handleSubmit}>
@@ -44,7 +53,7 @@ export const ContactForm = ({ onSubmit }) => {
 					required
 					placeholder="Enter your name"
 					value={name}
-					onChange={handleChange}
+					onChange={handleChangeName}
 				/>
 			</label>
 			<label>
@@ -57,14 +66,10 @@ export const ContactForm = ({ onSubmit }) => {
 					required
 					placeholder="Enter your phone"
 					value={number}
-					onChange={handleChange}
+					onChange={handleChangeNumber}
 				/>
 			</label>
-			<Button type="submit">Add contact</Button>
+			<Button type="submit" onSubmit={handleSubmit}>Add contact</Button>
 		</Form>
 	);
-};
-
-ContactForm.propTypes = {
-	onSubmit: PropTypes.func.isRequired,
 };
